@@ -1,0 +1,300 @@
+{% extends 'emotion_recognition/base.html' %}
+{% load custom_filters %}
+ {% load static %}
+
+{% block title %}Emotion Result - EmoSpeak{% endblock %}
+
+{% block extra_head %}
+<style>
+    .emotion-card {
+        transform-style: preserve-3d;
+        transition: transform 0.8s;
+    }
+    
+    .emotion-icon {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+    
+    .confidence-bar {
+        transition: width 1.5s ease-in-out;
+    }
+    
+    /* Emotion-specific colors */
+    .emotion-happy {
+        background-color: rgba(253, 224, 71, 0.2);
+        border-color: #FDE047;
+    }
+    
+    .emotion-sad {
+        background-color: rgba(96, 165, 250, 0.2);
+        border-color: #60A5FA;
+    }
+    
+    .emotion-angry {
+        background-color: rgba(248, 113, 113, 0.2);
+        border-color: #F87171;
+    }
+    
+    .emotion-neutral {
+        background-color: rgba(209, 213, 219, 0.2);
+        border-color: #D1D5DB;
+    }
+    
+    .emotion-fear {
+        background-color: rgba(192, 132, 252, 0.2);
+        border-color: #C084FC;
+    }
+    
+    .emotion-disgust {
+        background-color: rgba(110, 231, 183, 0.2);
+        border-color: #6EE7B7;
+    }
+    
+    .emotion-surprised {
+        background-color: rgba(244, 114, 182, 0.2);
+        border-color: #F472B6;
+    }
+    
+    .dark .emotion-happy {
+        background-color: rgba(253, 224, 71, 0.1);
+    }
+    
+    .dark .emotion-sad {
+        background-color: rgba(96, 165, 250, 0.1);
+    }
+    
+    .dark .emotion-angry {
+        background-color: rgba(248, 113, 113, 0.1);
+    }
+    
+    .dark .emotion-neutral {
+        background-color: rgba(209, 213, 219, 0.1);
+    }
+    
+    .dark .emotion-fear {
+        background-color: rgba(192, 132, 252, 0.1);
+    }
+    
+    .dark .emotion-disgust {
+        background-color: rgba(110, 231, 183, 0.1);
+    }
+    
+    .dark .emotion-surprised {
+        background-color: rgba(244, 114, 182, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl">
+                Emotion Analysis Result
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Analysis completed on {{ result.created_at|date:"F j, Y" }} at {{ result.created_at|time:"g:i A" }}
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'emotion_recognition:record' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150">
+                <i data-feather="mic" class="h-4 w-4 mr-2"></i>
+                New Recording
+            </a>
+            <a href="{% url 'emotion_recognition:dashboard' %}" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150">
+                <i data-feather="grid" class="h-4 w-4 mr-2"></i>
+                Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:p-6">
+            <!-- Primary Emotion Result -->
+            <div class="flex flex-col items-center mb-8">
+                <div class="emotion-card p-8 rounded-lg mb-4 emotion-{{ result.emotion }}">
+                    <!-- Emotion Icon -->
+                    <div class="emotion-icon text-center mb-4">
+                        {% if result.emotion == 'happy' %}
+                            <div class="text-6xl" aria-label="Happy">😄</div>
+                        {% elif result.emotion == 'sad' %}
+                            <div class="text-6xl" aria-label="Sad">😢</div>
+                        {% elif result.emotion == 'angry' %}
+                            <div class="text-6xl" aria-label="Angry">😠</div>
+                        {% elif result.emotion == 'fear' %}
+                            <div class="text-6xl" aria-label="Fear">😱</div>
+                        {% elif result.emotion == 'disgust' %}
+                            <div class="text-6xl" aria-label="Disgust">🤢</div>
+                        {% elif result.emotion == 'surprised' %}
+                            <div class="text-6xl" aria-label="Surprised">😲</div>
+                        {% else %} <!-- neutral -->
+                            <div class="text-6xl" aria-label="Neutral">😐</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Emotion Label -->
+                    <h3 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                        Your voice sounds <span class="capitalize">{{ result.emotion }}</span>
+                    </h3>
+                    
+                    <!-- Confidence Score -->
+                    <div class="flex flex-col items-center">
+                        <p class="text-gray-600 dark:text-gray-400 mb-2">Confidence: {{ result.confidence|floatformat:2|mul:100 }}%</p>
+                        <div class="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
+                            <div class="confidence-bar bg-primary-600 dark:bg-primary-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Audio Playback -->
+            {% if audio_exists %}
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Your Recording</h3>
+                <audio controls class="w-full">
+                    <source src="{{ result.audio_record.audio_file.url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+             </div>
+            {% else %}
+            <div class="mb-8 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Audio File Not Available</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    The original audio recording is no longer available. This may happen if the file was deleted or moved.
+                    However, your emotion analysis results are still preserved.
+                </p>
+            </div>
+            {% endif %}
+            
+            <!-- All Emotions Breakdown -->
+            {% if result.full_results %}
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Emotion Breakdown</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for emotion, score in result.full_results.items %}
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 flex-shrink-0 mr-3">
+                                {% if emotion == 'happy' %}
+                                    <div class="text-yellow-500"><i data-feather="smile" class="w-full h-full"></i></div>
+                                {% elif emotion == 'sad' %}
+                                    <div class="text-blue-500"><i data-feather="frown" class="w-full h-full"></i></div>
+                                {% elif emotion == 'angry' %}
+                                    <div class="text-red-500"><i data-feather="alert-triangle" class="w-full h-full"></i></div>
+                                {% elif emotion == 'fear' %}
+                                    <div class="text-purple-500"><i data-feather="alert-circle" class="w-full h-full"></i></div>
+                                {% elif emotion == 'disgust' %}
+                                    <div class="text-green-500"><i data-feather="x-circle" class="w-full h-full"></i></div>
+                                {% elif emotion == 'surprised' %}
+                                    <div class="text-pink-500"><i data-feather="zap" class="w-full h-full"></i></div>
+                                {% else %}
+                                    <div class="text-gray-500"><i data-feather="meh" class="w-full h-full"></i></div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200 capitalize">{{ emotion }}</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ score|floatformat:2|mul:100 }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                                    <div class="h-2.5 rounded-full secondary-bar" 
+                                         data-width="{{ score|floatformat:2|mul:100 }}" 
+                                         style="width: 0%; background-color: 
+                                         {% if emotion == 'happy' %}#FBBF24
+                                         {% elif emotion == 'sad' %}#60A5FA
+                                         {% elif emotion == 'angry' %}#EF4444
+                                         {% elif emotion == 'fear' %}#A855F7
+                                         {% elif emotion == 'disgust' %}#10B981
+                                         {% elif emotion == 'surprised' %}#EC4899
+                                         {% else %}#9CA3AF{% endif %}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- What This Means -->
+            <div class="mt-8 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">What This Means</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">
+                    {% if result.emotion == 'happy' %}
+                    Your voice shows characteristics of happiness! Happy speech typically has higher pitch variations, faster tempo, and brighter tonality.
+                    {% elif result.emotion == 'sad' %}
+                    Your voice displays patterns of sadness. Sad speech often has lower energy, slower pace, and falling intonation patterns.
+                    {% elif result.emotion == 'angry' %}
+                    Your voice exhibits signs of anger. Angry speech typically has higher intensity, faster tempo, and more abrupt changes in volume.
+                    {% elif result.emotion == 'fear' %}
+                    Your voice shows traits associated with fear. Fearful speech often includes irregular rhythm, voice trembling, and higher pitch.
+                    {% elif result.emotion == 'disgust' %}
+                    Your voice demonstrates characteristics of disgust. Disgusted speech typically features specific changes in phonation quality and prosody.
+                    {% elif result.emotion == 'surprised' %}
+                    Your voice indicates surprise! Surprised speech often features sudden pitch increases and distinctive energy patterns.
+                    {% else %}
+                    Your voice appears neutral, without strong emotional markers. Neutral speech typically has moderate pace, even tone, and balanced prosody.
+                    {% endif %}
+                </p>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Speech emotion recognition analyzes acoustic features like pitch, tempo, energy, and spectral characteristics to identify emotional states.
+                </p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-5 sm:px-6">
+            <div class="flex items-center justify-between flex-wrap sm:flex-nowrap">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Analysis ID: {{ result.id }}
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="flex space-x-3">
+                        <a href="{% url 'emotion_recognition:record' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150">
+                            <i data-feather="repeat" class="h-4 w-4 mr-2"></i>
+                            Try Again
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% load static %}
+<script src="{% static 'emotion_recognition/js/animations.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate confidence bar
+        setTimeout(() => {
+            const confidenceBar = document.querySelector('.confidence-bar');
+            if (confidenceBar) {
+                confidenceBar.style.width = '{{ result.confidence|floatformat:2|mul:100 }}%';
+            }
+            
+            // Animate all secondary bars
+            const secondaryBars = document.querySelectorAll('.secondary-bar');
+            secondaryBars.forEach(bar => {
+                const targetWidth = bar.getAttribute('data-width') + '%';
+                bar.style.width = targetWidth;
+            });
+        }, 500);
+        
+        // Initialize animations based on emotion
+        const emotion = '{{ result.emotion }}';
+        initEmotionAnimations(emotion);
+    });
+</script>
+{% endblock %}

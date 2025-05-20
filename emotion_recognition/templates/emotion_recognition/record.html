@@ -1,0 +1,640 @@
+{% extends 'emotion_recognition/base.html' %}
+ {% load static %}
+
+{% block title %}Record Audio - EmoSpeak{% endblock %}
+
+{% block extra_head %}
+<style>
+    .recording-wave {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+    }
+    
+    .recording-wave span {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        margin: 0 2px;
+        background-color: #0ea5e9;
+        border-radius: 50%;
+        animation: wave 1.5s infinite ease-in-out;
+    }
+    
+    @keyframes wave {
+        0%, 100% {
+            height: 5px;
+        }
+        50% {
+            height: 50px;
+        }
+    }
+    
+    .recording-wave span:nth-child(1) { animation-delay: 0.1s; }
+    .recording-wave span:nth-child(2) { animation-delay: 0.2s; }
+    .recording-wave span:nth-child(3) { animation-delay: 0.3s; }
+    .recording-wave span:nth-child(4) { animation-delay: 0.4s; }
+    .recording-wave span:nth-child(5) { animation-delay: 0.5s; }
+    .recording-wave span:nth-child(6) { animation-delay: 0.6s; }
+    .recording-wave span:nth-child(7) { animation-delay: 0.7s; }
+    .recording-wave span:nth-child(8) { animation-delay: 0.8s; }
+
+    .waveform-container {
+        width: 100%;
+        height: 150px;
+        position: relative;
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .dark .waveform-container {
+        background-color: #374151;
+    }
+
+    .timer {
+        font-family: monospace;
+        font-size: 1.5rem;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 dark:text-primary-400 bg-primary-100 dark:bg-gray-700 hover:bg-primary-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150;
+    }
+
+    .btn-disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Record or Upload Audio</h1>
+    
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg mb-8">
+        <div class="px-4 py-5 sm:px-6">
+            <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                <div class="flex items-center">
+                    <i data-feather="mic" class="mr-2 text-primary-600 dark:text-primary-400"></i>
+                    Record Your Voice
+                </div>
+            </h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                Speak clearly into your microphone for at least 3 seconds for best results
+            </p>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+            <div class="max-w-3xl mx-auto">
+                <div id="audio-controls" class="flex flex-col items-center">
+                    <!-- Audio visualization -->
+                    <div id="waveform-container" class="waveform-container mb-6 w-full">
+                        <div id="recording-indicator" class="recording-wave hidden absolute inset-0 flex justify-center items-center">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <canvas id="waveform" class="w-full h-full"></canvas>
+                    </div>
+                    
+                    <!-- Timer -->
+                    <div id="timer" class="timer mb-4 text-gray-900 dark:text-white">00:00</div>
+                    
+                    <!-- Controls -->
+                    <div class="flex space-x-4 justify-center mb-6">
+                        <button id="recordButton" class="btn-primary">
+                            <i data-feather="mic" class="mr-2 h-4 w-4"></i>
+                            Start Recording
+                        </button>
+                        <button id="stopButton" class="btn-danger hidden">
+                            <i data-feather="stop-circle" class="mr-2 h-4 w-4"></i>
+                            Stop Recording
+                        </button>
+                        <button id="pauseButton" class="btn-secondary hidden">
+                            <i data-feather="pause" class="mr-2 h-4 w-4"></i>
+                            Pause
+                        </button>
+                        <button id="resumeButton" class="btn-secondary hidden">
+                            <i data-feather="play" class="mr-2 h-4 w-4"></i>
+                            Resume
+                        </button>
+                    </div>
+                    
+                    <!-- Playback -->
+                    <div id="playback-container" class="w-full mb-6 hidden">
+                        <audio id="recordedAudio" controls class="w-full"></audio>
+                        
+                        <div class="flex justify-center mt-4 space-x-4">
+                            <button id="analyzeButton" class="btn-primary">
+                                <i data-feather="bar-chart-2" class="mr-2 h-4 w-4"></i>
+                                Analyze Emotion
+                            </button>
+                            <button id="discardButton" class="btn-danger">
+                                <i data-feather="trash-2" class="mr-2 h-4 w-4"></i>
+                                Discard
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading state -->
+                    <div id="loading-container" class="text-center hidden">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-400 mx-auto mb-4"></div>
+                        <p class="text-gray-700 dark:text-gray-300">Analyzing your speech...</p>
+                    </div>
+                    
+                    <!-- Error message -->
+                    <div id="error-container" class="w-full text-center hidden">
+                        <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+                            <p id="error-message"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h2 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                <div class="flex items-center">
+                    <i data-feather="upload" class="mr-2 text-primary-600 dark:text-primary-400"></i>
+                    Upload Audio File
+                </div>
+            </h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                Upload a .wav audio file (max 30 seconds) for emotion analysis
+            </p>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+            <form id="upload-form" action="{% url 'emotion_recognition:process_audio' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="max-w-lg flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md mx-auto">
+                    <div class="space-y-1 text-center">
+                        <i data-feather="file-text" class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"></i>
+                        <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                            <label for="audio_file" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 focus-within:outline-none">
+                                <span>Upload a file</span>
+                                <input id="audio_file" name="audio_file" type="file" class="sr-only" accept="audio/wav" required>
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            WAV up to 10MB
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="file-preview" class="mt-4 flex items-center justify-center hidden">
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-md py-2 px-4 flex items-center">
+                        <i data-feather="file" class="text-gray-500 dark:text-gray-400 mr-2"></i>
+                        <span id="file-name" class="text-gray-700 dark:text-gray-300"></span>
+                        <button type="button" id="remove-file" class="ml-2 text-red-500 hover:text-red-700 dark:hover:text-red-300 focus:outline-none">
+                            <i data-feather="x-circle" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex justify-center">
+                    <button type="submit" id="upload-button" class="btn-primary opacity-50 cursor-not-allowed" disabled>
+                        <i data-feather="upload-cloud" class="mr-2 h-4 w-4"></i>
+                        Upload and Analyze
+                    </button>
+                </div>
+                
+                <div id="upload-loading" class="mt-4 text-center hidden">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 dark:border-primary-400 mx-auto mb-2"></div>
+                    <p class="text-gray-700 dark:text-gray-300">Uploading and analyzing...</p>
+                </div>
+                
+                <div id="upload-error" class="mt-4 text-center hidden">
+                    <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+                        <p id="upload-error-message"></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-6 text-center">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Emotion Detection Guide</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+            For best results, speak clearly and express a single emotion. Our system can detect:
+        </p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Happy">😄</div>
+                <p class="text-gray-900 dark:text-white font-medium">Happy</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Sad">😢</div>
+                <p class="text-gray-900 dark:text-white font-medium">Sad</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Angry">😠</div>
+                <p class="text-gray-900 dark:text-white font-medium">Angry</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Neutral">😐</div>
+                <p class="text-gray-900 dark:text-white font-medium">Neutral</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Fear">😱</div>
+                <p class="text-gray-900 dark:text-white font-medium">Fear</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Disgust">🤢</div>
+                <p class="text-gray-900 dark:text-white font-medium">Disgust</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Surprised">😲</div>
+                <p class="text-gray-900 dark:text-white font-medium">Surprised</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-4xl mb-2" aria-label="Learn More">ℹ️</div>
+                <p class="text-gray-900 dark:text-white font-medium">Learn More</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% load static %}
+<script src="{% static 'emotion_recognition/js/recorder.js' %}"></script>
+<script src="{% static 'emotion_recognition/js/audio-processor.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+        
+        // Initialize audio recorder
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const resumeButton = document.getElementById('resumeButton');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const discardButton = document.getElementById('discardButton');
+        const timer = document.getElementById('timer');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const playbackContainer = document.getElementById('playback-container');
+        const recordedAudio = document.getElementById('recordedAudio');
+        const loadingContainer = document.getElementById('loading-container');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        const waveformCanvas = document.getElementById('waveform');
+        
+        let recorder = null;
+        let audioContext = null;
+        let audioProcessor = null;
+        let startTime = null;
+        let timerInterval = null;
+        let audioBlob = null;
+        
+        // Initialize audio file upload
+        const fileInput = document.getElementById('audio_file');
+        const uploadForm = document.getElementById('upload-form');
+        const filePreview = document.getElementById('file-preview');
+        const fileName = document.getElementById('file-name');
+        const removeFile = document.getElementById('remove-file');
+        const uploadButton = document.getElementById('upload-button');
+        const uploadLoading = document.getElementById('upload-loading');
+        const uploadError = document.getElementById('upload-error');
+        const uploadErrorMessage = document.getElementById('upload-error-message');
+        
+        // File upload handling
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    
+                    // Check file type
+                    if (file.type !== 'audio/wav') {
+                        uploadError.classList.remove('hidden');
+                        uploadErrorMessage.textContent = 'Please select a .wav file';
+                        fileInput.value = '';
+                        return;
+                    }
+                    
+                    // Check file size (10MB max)
+                    if (file.size > 10 * 1024 * 1024) {
+                        uploadError.classList.remove('hidden');
+                        uploadErrorMessage.textContent = 'File size must be less than 10MB';
+                        fileInput.value = '';
+                        return;
+                    }
+                    
+                    // Show file preview
+                    fileName.textContent = file.name;
+                    filePreview.classList.remove('hidden');
+                    uploadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    uploadButton.disabled = false;
+                    uploadError.classList.add('hidden');
+                } else {
+                    filePreview.classList.add('hidden');
+                    uploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    uploadButton.disabled = true;
+                }
+            });
+            
+            // Remove file
+            if (removeFile) {
+                removeFile.addEventListener('click', function() {
+                    fileInput.value = '';
+                    filePreview.classList.add('hidden');
+                    uploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    uploadButton.disabled = true;
+                    uploadError.classList.add('hidden');
+                });
+            }
+            
+            // Form submission
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    if (fileInput.files.length === 0) {
+                        return;
+                    }
+                    
+                    uploadLoading.classList.remove('hidden');
+                    uploadButton.disabled = true;
+                    uploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    const formData = new FormData(uploadForm);
+                    
+                    fetch('{% url "emotion_recognition:process_audio" %}', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        uploadLoading.classList.add('hidden');
+                        
+                        if (data.success) {
+                            window.location.href = data.result_url;
+                        } else {
+                            uploadError.classList.remove('hidden');
+                            uploadErrorMessage.textContent = data.error || 'An error occurred during processing';
+                            uploadButton.disabled = false;
+                            uploadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        uploadLoading.classList.add('hidden');
+                        uploadError.classList.remove('hidden');
+                        uploadErrorMessage.textContent = 'Network error. Please try again.';
+                        uploadButton.disabled = false;
+                        uploadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    });
+                });
+            }
+        }
+        
+        // Check for getUserMedia support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            errorContainer.classList.remove('hidden');
+            errorMessage.textContent = 'Audio recording is not supported in your browser. Please try a modern browser like Chrome or Firefox.';
+            if (recordButton) recordButton.disabled = true;
+            return;
+        }
+        
+        // Initialize waveform visualization
+        function initWaveform() {
+            const ctx = waveformCanvas.getContext('2d');
+            const width = waveformCanvas.width = waveformCanvas.offsetWidth;
+            const height = waveformCanvas.height = waveformCanvas.offsetHeight;
+            
+            // Clear canvas
+            ctx.fillStyle = getComputedStyle(waveformCanvas).backgroundColor;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw baseline
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+        }
+        
+        // Update timer
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsedTime = Date.now() - startTime;
+            const seconds = Math.floor(elapsedTime / 1000) % 60;
+            const minutes = Math.floor(elapsedTime / 60000);
+            
+            timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Start recording
+        if (recordButton) {
+            recordButton.addEventListener('click', function() {
+                // Request microphone access
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        // Create AudioContext
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        
+                        // Initialize recorder
+                        recorder = new Recorder(audioContext);
+                        
+                        // Initialize visualizer
+                        audioProcessor = new AudioProcessor(audioContext, stream);
+                        audioProcessor.connectVisualizer(waveformCanvas);
+                        
+                        // Start recording
+                        recorder.start(stream)
+                            .then(() => {
+                                // Update UI
+                                recordButton.classList.add('hidden');
+                                stopButton.classList.remove('hidden');
+                                pauseButton.classList.remove('hidden');
+                                recordingIndicator.classList.remove('hidden');
+                                
+                                // Start timer
+                                startTime = Date.now();
+                                updateTimer();
+                                timerInterval = setInterval(updateTimer, 1000);
+                                
+                                // Start visualizer
+                                audioProcessor.start();
+                            })
+                            .catch(error => {
+                                console.error('Error starting recorder:', error);
+                                errorContainer.classList.remove('hidden');
+                                errorMessage.textContent = 'Could not start recording: ' + error.message;
+                            });
+                    })
+                    .catch(function(err) {
+                        console.error('Error accessing microphone:', err);
+                        errorContainer.classList.remove('hidden');
+                        errorMessage.textContent = 'Microphone access denied. Please allow microphone access and try again.';
+                    });
+            });
+        }
+        
+        // Stop recording
+        if (stopButton) {
+            stopButton.addEventListener('click', function() {
+                if (!recorder) return;
+                
+                // Stop recording
+                recorder.stop()
+                    .then(blob => {
+                        // Save the audio blob
+                        audioBlob = blob;
+                        
+                        // Create audio URL and update player
+                        const audioURL = URL.createObjectURL(blob);
+                        recordedAudio.src = audioURL;
+                        
+                        // Update UI
+                        stopButton.classList.add('hidden');
+                        pauseButton.classList.add('hidden');
+                        resumeButton.classList.add('hidden');
+                        recordingIndicator.classList.add('hidden');
+                        playbackContainer.classList.remove('hidden');
+                        
+                        // Stop timer
+                        clearInterval(timerInterval);
+                        
+                        // Clean up
+                        if (audioProcessor) {
+                            audioProcessor.stop();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error stopping recorder:', error);
+                        errorContainer.classList.remove('hidden');
+                        errorMessage.textContent = 'Error saving recording: ' + error.message;
+                    });
+            });
+        }
+        
+        // Pause recording
+        if (pauseButton) {
+            pauseButton.addEventListener('click', function() {
+                if (!recorder) return;
+                
+                recorder.pause();
+                pauseButton.classList.add('hidden');
+                resumeButton.classList.remove('hidden');
+                recordingIndicator.classList.add('hidden');
+                
+                // Pause timer
+                clearInterval(timerInterval);
+            });
+        }
+        
+        // Resume recording
+        if (resumeButton) {
+            resumeButton.addEventListener('click', function() {
+                if (!recorder) return;
+                
+                recorder.resume();
+                resumeButton.classList.add('hidden');
+                pauseButton.classList.remove('hidden');
+                recordingIndicator.classList.remove('hidden');
+                
+                // Resume timer
+                timerInterval = setInterval(updateTimer, 1000);
+            });
+        }
+        
+        // Analyze recording
+        if (analyzeButton) {
+            analyzeButton.addEventListener('click', function() {
+                if (!audioBlob) return;
+                
+                // Show loading state
+                playbackContainer.classList.add('hidden');
+                loadingContainer.classList.remove('hidden');
+                
+                // Create form data with audio blob
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.wav');
+                
+                // Send to server for analysis
+                fetch('{% url "emotion_recognition:save_recording" %}', {
+                    method: 'POST',
+                    body: audioBlob,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingContainer.classList.add('hidden');
+                    
+                    if (data.success) {
+                        // Navigate to results page
+                        window.location.href = data.result_url;
+                    } else {
+                        // Show error
+                        errorContainer.classList.remove('hidden');
+                        errorMessage.textContent = data.error || 'An error occurred during analysis';
+                        playbackContainer.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingContainer.classList.add('hidden');
+                    errorContainer.classList.remove('hidden');
+                    errorMessage.textContent = 'Network error. Please try again.';
+                    playbackContainer.classList.remove('hidden');
+                });
+            });
+        }
+        
+        // Discard recording
+        if (discardButton) {
+            discardButton.addEventListener('click', function() {
+                // Reset everything
+                audioBlob = null;
+                if (recordedAudio.src) {
+                    URL.revokeObjectURL(recordedAudio.src);
+                    recordedAudio.src = '';
+                }
+                
+                // Update UI
+                playbackContainer.classList.add('hidden');
+                recordButton.classList.remove('hidden');
+                timer.textContent = '00:00';
+                errorContainer.classList.add('hidden');
+                
+                // Reset audio context and processor
+                if (audioContext) {
+                    audioContext.close().then(() => {
+                        audioContext = null;
+                        audioProcessor = null;
+                        recorder = null;
+                    });
+                }
+                
+                // Reinitialize waveform
+                initWaveform();
+            });
+        }
+        
+        // Initialize UI
+        initWaveform();
+    });
+</script>
+{% endblock %}

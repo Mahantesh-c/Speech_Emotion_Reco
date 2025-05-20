@@ -1,0 +1,423 @@
+{% extends 'emotion_recognition/base.html' %}
+{% load custom_filters %}
+ {% load static %}
+
+
+{% block title %}Profile - EmoSpeak{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl">
+                Your Profile
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                View your account information and emotion analysis history
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'emotion_recognition:record' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150">
+                <i data-feather="mic" class="h-4 w-4 mr-2"></i>
+                New Recording
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- User Information -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-2">Account Information</h3>
+                <div class="mt-4">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="h-20 w-20 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                    </div>
+                    <dl>
+                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 rounded-md mb-2">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-300">Username</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">{{ user.username }}</dd>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 rounded-md mb-2">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-300">Email</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">{{ user.email }}</dd>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 rounded-md mb-2">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-300">Member Since</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">{{ user.date_joined|date:"F j, Y" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="mt-6">
+                    <a href="{% url 'emotion_recognition:password_reset' %}" class="inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">
+                        <i data-feather="key" class="h-4 w-4 mr-2"></i>
+                        Change password
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Emotion Distribution Chart -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg col-span-2">
+            <div class="p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Your Emotion Distribution</h3>
+                {% if emotion_counts %}
+                <div>
+                    <canvas id="emotionChart" height="250"></canvas>
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center h-64">
+                    <div class="text-gray-400 dark:text-gray-500 mb-4">
+                        <i data-feather="bar-chart-2" class="h-16 w-16"></i>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-center">
+                        No emotion data available yet. Start recording to see your emotion distribution.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="mt-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Usage Statistics</h3>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Total Recordings -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg stat-card">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-md p-3">
+                            <i data-feather="mic" class="h-6 w-6 text-primary-600 dark:text-primary-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                    Total Recordings
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {{ results|length }}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Most Common Emotion -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg stat-card">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 rounded-md p-3">
+                            <i data-feather="heart" class="h-6 w-6 text-yellow-600 dark:text-yellow-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                    Most Common
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900 dark:text-white capitalize">
+                                        {% if emotion_counts %}
+                                            {% with items=emotion_counts.items %}
+                                                {% with sorted_items=items|dictsort:"1"|last %}
+                                                    {{ sorted_items.0 }}
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last Recording -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg stat-card">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-md p-3">
+                            <i data-feather="clock" class="h-6 w-6 text-green-600 dark:text-green-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                    Last Recording
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {% if results %}
+                                            {{ results.0.created_at|date:"M d" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recording Methods -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg stat-card">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900 rounded-md p-3">
+                            <i data-feather="layers" class="h-6 w-6 text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                                    Record vs Upload
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {% with record_count=results|filter_by_source:"record"|length %}
+                                        {% with upload_count=results|filter_by_source:"upload"|length %}
+                                            {{ record_count }} / {{ upload_count }}
+                                        {% endwith %}
+                                        {% endwith %}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent History -->
+    <div class="mt-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Analysis History</h3>
+        
+        <div class="flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 dark:border-gray-700 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Date & Time
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Emotion
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Confidence
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Source
+                                    </th>
+                                    <th scope="col" class="relative px-6 py-3">
+                                        <span class="sr-only">View</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {% if results %}
+                                    {% for result in results %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900 dark:text-white">{{ result.created_at|date:"M d, Y" }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ result.created_at|time:"g:i A" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center text-2xl">
+                                                    {% if result.emotion == 'happy' %}
+                                                        <span title="Happy" aria-label="Happy">😄</span>
+                                                    {% elif result.emotion == 'sad' %}
+                                                        <span title="Sad" aria-label="Sad">😢</span>
+                                                    {% elif result.emotion == 'angry' %}
+                                                        <span title="Angry" aria-label="Angry">😠</span>
+                                                    {% elif result.emotion == 'fear' %}
+                                                        <span title="Fear" aria-label="Fear">😱</span>
+                                                    {% elif result.emotion == 'disgust' %}
+                                                        <span title="Disgust" aria-label="Disgust">🤢</span>
+                                                    {% elif result.emotion == 'surprised' %}
+                                                        <span title="Surprised" aria-label="Surprised">😲</span>
+                                                    {% else %}
+                                                        <span title="Neutral" aria-label="Neutral">😐</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900 dark:text-white capitalize">{{ result.emotion }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900 dark:text-white">{{ result.confidence|floatformat:2|mul:100 }}%</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if result.audio_record.source == 'record' %}
+                                                bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                                {% else %}
+                                                bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                                {% endif %}">
+                                                {% if result.audio_record.source == 'record' %}
+                                                    Recorded
+                                                {% else %}
+                                                    Uploaded
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{% url 'emotion_recognition:result' result.id %}" class="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                            <div class="flex flex-col items-center">
+                                                <i data-feather="inbox" class="h-12 w-12 mb-4"></i>
+                                                <p>No emotion analyses recorded yet.</p>
+                                                <a href="{% url 'emotion_recognition:record' %}" class="mt-2 text-primary-600 dark:text-primary-400 hover:underline">
+                                                    Record your first audio
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if emotion_counts %}
+        // Create emotion distribution chart
+        const emotionCtx = document.getElementById('emotionChart').getContext('2d');
+        
+        // Data preparation
+        const emotionLabels = [
+            {% for emotion, count in emotion_counts.items %}
+                '{{ emotion|capfirst }}',
+            {% endfor %}
+        ];
+        
+        const emotionData = [
+            {% for emotion, count in emotion_counts.items %}
+                {{ count }},
+            {% endfor %}
+        ];
+        
+        // Colors based on emotion
+        const emotionColors = [
+            {% for emotion, count in emotion_counts.items %}
+                {% if emotion == 'happy' %}'rgba(253, 224, 71, 0.8)'
+                {% elif emotion == 'sad' %}'rgba(96, 165, 250, 0.8)'
+                {% elif emotion == 'angry' %}'rgba(248, 113, 113, 0.8)'
+                {% elif emotion == 'fear' %}'rgba(192, 132, 252, 0.8)'
+                {% elif emotion == 'disgust' %}'rgba(110, 231, 183, 0.8)'
+                {% elif emotion == 'surprised' %}'rgba(244, 114, 182, 0.8)'
+                {% else %}'rgba(209, 213, 219, 0.8)'{% endif %},
+            {% endfor %}
+        ];
+        
+        const emotionBorderColors = [
+            {% for emotion, count in emotion_counts.items %}
+                {% if emotion == 'happy' %}'rgb(251, 191, 36)'
+                {% elif emotion == 'sad' %}'rgb(59, 130, 246)'
+                {% elif emotion == 'angry' %}'rgb(239, 68, 68)'
+                {% elif emotion == 'fear' %}'rgb(168, 85, 247)'
+                {% elif emotion == 'disgust' %}'rgb(16, 185, 129)'
+                {% elif emotion == 'surprised' %}'rgb(236, 72, 153)'
+                {% else %}'rgb(156, 163, 175)'{% endif %},
+            {% endfor %}
+        ];
+        
+        // Check if we need light/dark mode
+        const isLight = !document.documentElement.classList.contains('dark');
+        const textColor = isLight ? '#374151' : '#D1D5DB';
+        const gridColor = isLight ? 'rgba(107, 114, 128, 0.1)' : 'rgba(75, 85, 99, 0.2)';
+        
+        const emotionChart = new Chart(emotionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: emotionLabels,
+                datasets: [{
+                    data: emotionData,
+                    backgroundColor: emotionColors,
+                    borderColor: emotionBorderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: textColor,
+                            font: {
+                                size: 12
+                            },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
+            }
+        });
+        
+        // Update chart on dark mode toggle
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+            setTimeout(() => {
+                const isLight = !document.documentElement.classList.contains('dark');
+                const textColor = isLight ? '#374151' : '#D1D5DB';
+                
+                emotionChart.options.plugins.legend.labels.color = textColor;
+                emotionChart.update();
+            }, 100);
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,359 @@
+{% extends "emotion_recognition/base.html" %}
+ {% load static %}
+
+{% block title %}{{ dataset.name }} - EmoSpeak{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <a href="{% url 'emotion_recognition:sample_datasets' %}" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Sample Datasets
+        </a>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-8">
+        <div class="p-6">
+            <h1 class="text-3xl font-bold mb-4">{{ dataset.name }}</h1>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">{{ dataset.description }}</p>
+            
+            <div class="flex flex-wrap gap-4 mb-6 text-sm text-gray-500 dark:text-gray-400">
+                <span>
+                    <i class="fas fa-file-audio mr-1"></i> {{ samples|length }} samples shown
+                </span>
+                {% if dataset.source_url %}
+                <a href="{{ dataset.source_url }}" target="_blank" class="text-blue-500 hover:underline">
+                    <i class="fas fa-external-link-alt mr-1"></i> Source
+                </a>
+                {% endif %}
+                {% if dataset.license %}
+                <span>
+                    <i class="fas fa-certificate mr-1"></i> {{ dataset.license }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Emotion filter -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium mb-3">Filter by Emotion</h3>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'emotion_recognition:dataset_detail' dataset.id %}" 
+                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                              {% if not selected_emotion %}bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200
+                              {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{% endif %}">
+                        All
+                    </a>
+                    
+                    {% for emotion in dataset.emotions %}
+                    <a href="{% url 'emotion_recognition:dataset_detail' dataset.id %}?emotion={{ emotion }}" 
+                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                              {% if emotion == selected_emotion %}
+                                  {% if emotion == 'happy' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                  {% elif emotion == 'sad' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                  {% elif emotion == 'angry' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                  {% elif emotion == 'neutral' %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
+                                  {% elif emotion == 'fear' or emotion == 'fearful' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                  {% elif emotion == 'disgust' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                  {% elif emotion == 'surprised' %}bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200
+                                  {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{% endif %}
+                              {% else %}
+                                  bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
+                              {% endif %}">
+                        {{ emotion|title }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Samples list -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for sample in samples %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="p-5">
+                <h3 class="text-lg font-medium mb-2">{{ sample.file_name }}</h3>
+                
+                <div class="flex gap-3 mb-4 text-sm">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full 
+                                {% if sample.emotion == 'happy' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                {% elif sample.emotion == 'sad' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                {% elif sample.emotion == 'angry' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                {% elif sample.emotion == 'neutral' %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200
+                                {% elif sample.emotion == 'fear' or sample.emotion == 'fearful' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                {% elif sample.emotion == 'disgust' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                {% elif sample.emotion == 'surprised' %}bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200
+                                {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{% endif %}">
+                        <i class="fas fa-tag mr-1"></i> {{ sample.emotion|title }}
+                    </span>
+                    
+                    {% if sample.gender %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                        <i class="fas {% if sample.gender == 'male' %}fa-mars{% else %}fa-venus{% endif %} mr-1"></i> 
+                        {{ sample.gender|title }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Audio player -->
+                <div class="mt-3 mb-4">
+                    <audio controls class="w-full" preload="none">
+                        <source src="{% url 'emotion_recognition:sample_audio' dataset.id sample.file_name %}" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+                
+                <div class="mt-4 flex justify-between">
+                    <button class="analyze-sample-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded 
+                                 text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 
+                                 focus:ring-offset-2 focus:ring-indigo-500"
+                            data-sample-path="{{ sample.file_path }}"
+                            data-sample-name="{{ sample.file_name }}">
+                        <i class="fas fa-magic mr-1"></i> Analyze
+                    </button>
+                    
+                    <button class="download-sample-btn inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded 
+                                 text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 
+                                 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 
+                                 dark:border-gray-600 dark:hover:bg-gray-600"
+                            data-sample-url="{% url 'emotion_recognition:sample_audio' dataset.id sample.file_name %}">
+                        <i class="fas fa-download mr-1"></i> Download
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <p class="text-gray-500 dark:text-gray-400">
+                <i class="fas fa-exclamation-circle text-4xl mb-3 block"></i>
+                No samples found for this dataset{% if selected_emotion %} with the selected emotion ({{ selected_emotion }}){% endif %}.
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex justify-center mt-8">
+        <nav class="inline-flex rounded-md shadow-sm">
+            {% if page_obj.has_previous %}
+            <a href="?page=1{% if selected_emotion %}&emotion={{ selected_emotion }}{% endif %}" 
+               class="inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_emotion %}&emotion={{ selected_emotion }}{% endif %}" 
+               class="inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                <i class="fas fa-angle-left"></i>
+            </a>
+            {% endif %}
+            
+            <span class="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_emotion %}&emotion={{ selected_emotion }}{% endif %}" 
+               class="inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if selected_emotion %}&emotion={{ selected_emotion }}{% endif %}" 
+               class="inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Analysis Result Modal -->
+<div id="analysisModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 m-4 max-w-lg w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold" id="modalTitle">Analyzing sample...</h3>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="loadingIndicator" class="text-center py-6">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+            <p>Analyzing audio sample...</p>
+        </div>
+        
+        <div id="analysisResult" class="hidden">
+            <div class="text-center mb-6">
+                <img id="emotionIcon" src="" alt="Emotion" class="w-20 h-20 mx-auto mb-2">
+                <h3 id="detectedEmotion" class="text-xl font-bold mb-1">Neutral</h3>
+                <div class="flex justify-center items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Confidence:</span>
+                    <div class="ml-2 w-32 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="confidenceBar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <span id="confidenceValue" class="ml-2 text-sm text-gray-500 dark:text-gray-400">0%</span>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-medium mb-2">All Predictions</h4>
+                <div id="predictionResults" class="space-y-2">
+                    <!-- Prediction bars will be inserted here -->
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    This is an automatic analysis of the sample audio file. 
+                    Results may vary based on audio quality.
+                </p>
+            </div>
+        </div>
+        
+        <div id="analysisError" class="hidden">
+            <div class="text-center text-red-500 py-4">
+                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                <p id="errorMessage">An error occurred during analysis.</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 flex justify-end">
+            <button id="dismissModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('analysisModal');
+    const closeModal = document.getElementById('closeModal');
+    const dismissModal = document.getElementById('dismissModal');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const analysisResult = document.getElementById('analysisResult');
+    const analysisError = document.getElementById('analysisError');
+    const modalTitle = document.getElementById('modalTitle');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Elements for displaying results
+    const emotionIcon = document.getElementById('emotionIcon');
+    const detectedEmotion = document.getElementById('detectedEmotion');
+    const confidenceBar = document.getElementById('confidenceBar');
+    const confidenceValue = document.getElementById('confidenceValue');
+    const predictionResults = document.getElementById('predictionResults');
+    
+    // Event listeners for analyze buttons
+    document.querySelectorAll('.analyze-sample-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const samplePath = this.getAttribute('data-sample-path');
+            const sampleName = this.getAttribute('data-sample-name');
+            
+            // Show modal and loading state
+            modal.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            analysisResult.classList.add('hidden');
+            analysisError.classList.add('hidden');
+            modalTitle.textContent = `Analyzing: ${sampleName}`;
+            
+            // Make API request to analyze the sample
+            fetch(`/api/analyze-sample/?path=${encodeURIComponent(samplePath)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error analyzing sample');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update UI with results
+                        updateAnalysisResults(data);
+                        loadingIndicator.classList.add('hidden');
+                        analysisResult.classList.remove('hidden');
+                    } else {
+                        throw new Error(data.error || 'Error analyzing sample');
+                    }
+                })
+                .catch(error => {
+                    // Show error message
+                    errorMessage.textContent = error.message;
+                    loadingIndicator.classList.add('hidden');
+                    analysisError.classList.remove('hidden');
+                });
+        });
+    });
+    
+    // Event listeners for download buttons
+    document.querySelectorAll('.download-sample-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const sampleUrl = this.getAttribute('data-sample-url');
+            // Create a temporary link and trigger download
+            const tempLink = document.createElement('a');
+            tempLink.href = sampleUrl;
+            tempLink.setAttribute('download', '');
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        });
+    });
+    
+    // Close modal when clicking the close button or outside the modal
+    closeModal.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+    
+    dismissModal.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+    
+    // Function to update the analysis results in the modal
+    function updateAnalysisResults(data) {
+        const emotion = data.emotion;
+        const confidence = data.confidence;
+        const predictions = data.full_results;
+        
+        // Update emotion icon
+        emotionIcon.src = `/static/emotion_recognition/svg/${emotion}.svg`;
+        
+        // Update emotion label
+        detectedEmotion.textContent = `${emotion.charAt(0).toUpperCase() + emotion.slice(1)}`;
+        
+        // Update confidence display
+        const confidencePercent = Math.round(confidence * 100);
+        confidenceBar.style.width = `${confidencePercent}%`;
+        confidenceValue.textContent = `${confidencePercent}%`;
+        
+        // Clear previous prediction results
+        predictionResults.innerHTML = '';
+        
+        // Add prediction bars for all emotions
+        Object.entries(predictions).sort((a, b) => b[1] - a[1]).forEach(([emotion, score]) => {
+            const scorePercent = Math.round(score * 100);
+            
+            // Determine color based on emotion
+            let colorClass = 'bg-gray-500';
+            if (emotion === 'happy') colorClass = 'bg-green-500';
+            else if (emotion === 'sad') colorClass = 'bg-blue-500';
+            else if (emotion === 'angry') colorClass = 'bg-red-500';
+            else if (emotion === 'neutral') colorClass = 'bg-gray-500';
+            else if (emotion === 'fear' || emotion === 'fearful') colorClass = 'bg-purple-500';
+            else if (emotion === 'disgust') colorClass = 'bg-yellow-500';
+            else if (emotion === 'surprised') colorClass = 'bg-pink-500';
+            
+            // Create prediction bar
+            const barHtml = `
+                <div class="flex items-center">
+                    <span class="w-20 text-xs">${emotion.charAt(0).toUpperCase() + emotion.slice(1)}</span>
+                    <div class="ml-2 flex-grow bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                        <div class="${colorClass} h-2 rounded-full" style="width: ${scorePercent}%"></div>
+                    </div>
+                    <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">${scorePercent}%</span>
+                </div>
+            `;
+            
+            predictionResults.insertAdjacentHTML('beforeend', barHtml);
+        });
+    }
+});
+</script>
+{% endblock %}

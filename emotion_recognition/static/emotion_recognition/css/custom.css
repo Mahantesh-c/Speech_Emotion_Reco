@@ -1,0 +1,323 @@
+/* Custom styles for the Speech Emotion Recognition application */
+
+/* Animation utilities */
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Audio visualization */
+.waveform-container {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+}
+
+.dark .waveform-container {
+    background-color: #374151;
+}
+
+canvas#waveform {
+    width: 100%;
+    height: 100%;
+}
+
+/* Recording indicator */
+.recording-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.recording-wave {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.recording-wave span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin: 0 2px;
+    background-color: #0ea5e9;
+    border-radius: 50%;
+    animation: wave 1.5s infinite ease-in-out;
+}
+
+@keyframes wave {
+    0%, 100% {
+        height: 5px;
+    }
+    50% {
+        height: 50px;
+    }
+}
+
+.recording-wave span:nth-child(1) { animation-delay: 0.1s; }
+.recording-wave span:nth-child(2) { animation-delay: 0.2s; }
+.recording-wave span:nth-child(3) { animation-delay: 0.3s; }
+.recording-wave span:nth-child(4) { animation-delay: 0.4s; }
+.recording-wave span:nth-child(5) { animation-delay: 0.5s; }
+.recording-wave span:nth-child(6) { animation-delay: 0.6s; }
+.recording-wave span:nth-child(7) { animation-delay: 0.7s; }
+.recording-wave span:nth-child(8) { animation-delay: 0.8s; }
+
+/* Timer display */
+.timer {
+    font-family: monospace;
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
+}
+
+/* Buttons */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: #0ea5e9;
+    transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0284c7;
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #bae6fd;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: #0369a1;
+    background-color: #e0f2fe;
+    transition: background-color 0.15s ease;
+}
+
+.dark .btn-secondary {
+    color: #7dd3fc;
+    background-color: #1e3a5f;
+}
+
+.btn-secondary:hover {
+    background-color: #bae6fd;
+}
+
+.dark .btn-secondary:hover {
+    background-color: #164e63;
+}
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: #ef4444;
+    transition: background-color 0.15s ease;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+/* Drag and drop styles */
+.drag-over {
+    border-color: #0ea5e9 !important;
+    background-color: #e0f2fe !important;
+}
+
+.dark .drag-over {
+    border-color: #0ea5e9 !important;
+    background-color: #075985 !important;
+}
+
+/* Emotion-specific colors and styling */
+.emotion-happy {
+    background-color: rgba(253, 224, 71, 0.2);
+    border-color: #FDE047;
+}
+
+.emotion-sad {
+    background-color: rgba(96, 165, 250, 0.2);
+    border-color: #60A5FA;
+}
+
+.emotion-angry {
+    background-color: rgba(248, 113, 113, 0.2);
+    border-color: #F87171;
+}
+
+.emotion-neutral {
+    background-color: rgba(209, 213, 219, 0.2);
+    border-color: #D1D5DB;
+}
+
+.emotion-fear {
+    background-color: rgba(192, 132, 252, 0.2);
+    border-color: #C084FC;
+}
+
+.emotion-disgust {
+    background-color: rgba(110, 231, 183, 0.2);
+    border-color: #6EE7B7;
+}
+
+.emotion-surprised {
+    background-color: rgba(244, 114, 182, 0.2);
+    border-color: #F472B6;
+}
+
+.dark .emotion-happy {
+    background-color: rgba(253, 224, 71, 0.1);
+}
+
+.dark .emotion-sad {
+    background-color: rgba(96, 165, 250, 0.1);
+}
+
+.dark .emotion-angry {
+    background-color: rgba(248, 113, 113, 0.1);
+}
+
+.dark .emotion-neutral {
+    background-color: rgba(209, 213, 219, 0.1);
+}
+
+.dark .emotion-fear {
+    background-color: rgba(192, 132, 252, 0.1);
+}
+
+.dark .emotion-disgust {
+    background-color: rgba(110, 231, 183, 0.1);
+}
+
+.dark .emotion-surprised {
+    background-color: rgba(244, 114, 182, 0.1);
+}
+
+/* Emotion card animations */
+.emotion-card {
+    transform-style: preserve-3d;
+    transition: transform 0.8s, box-shadow 0.3s;
+    border-radius: 0.5rem;
+    border-width: 1px;
+}
+
+.emotion-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .emotion-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Confidence bar animation */
+.confidence-bar {
+    transition: width 1.5s ease-in-out;
+}
+
+/* Profile page stats */
+.stat-card {
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .stat-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* Message alerts */
+.close-alert {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.close-alert:hover {
+    opacity: 0.7;
+}
+
+/* Audio player custom styling */
+audio {
+    width: 100%;
+    border-radius: 0.5rem;
+}
+
+audio::-webkit-media-controls-panel {
+    background-color: #f3f4f6;
+}
+
+.dark audio::-webkit-media-controls-panel {
+    background-color: #374151;
+}
+
+/* Forms */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #bae6fd;
+    border-color: #0ea5e9;
+}
+
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+    box-shadow: 0 0 0 2px #075985;
+    border-color: #0ea5e9;
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Loading animation */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

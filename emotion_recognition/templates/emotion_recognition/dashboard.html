@@ -1,0 +1,247 @@
+{% extends 'emotion_recognition/base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}Dashboard - EmoSpeak{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
+                Welcome, {{ user.username }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Track your emotional analysis history and start new recordings
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'emotion_recognition:record' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150">
+                <i data-feather="mic" class="h-4 w-4 mr-2"></i>
+                New Recording
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Record Audio -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-md p-3">
+                        <i data-feather="mic" class="h-6 w-6 text-primary-600 dark:text-primary-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-lg font-medium text-gray-900 dark:text-white truncate">
+                            Record Audio
+                        </dt>
+                        <dd class="flex items-baseline">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                Use your microphone to record and analyze speech
+                            </span>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-4 sm:px-6">
+                <div class="text-sm">
+                    <a href="{% url 'emotion_recognition:record' %}" class="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 flex items-center">
+                        Start recording
+                        <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Audio -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-green-100 dark:bg-green-900 rounded-md p-3">
+                        <i data-feather="upload" class="h-6 w-6 text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-lg font-medium text-gray-900 dark:text-white truncate">
+                            Upload Audio
+                        </dt>
+                        <dd class="flex items-baseline">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                Upload an audio file for analysis
+                            </span>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-4 sm:px-6">
+                <div class="text-sm">
+                    <form id="upload-form" action="{% url 'emotion_recognition:process_audio' %}" method="POST" enctype="multipart/form-data" class="flex items-center">
+                        {% csrf_token %}
+                        <input type="file" name="audio_file" id="audio_file" accept="audio/wav" class="hidden">
+                        <label for="audio_file" class="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 cursor-pointer flex items-center">
+                            Select file
+                            <i data-feather="file" class="h-4 w-4 ml-2"></i>
+                        </label>
+                        <span id="file-selected" class="ml-2 text-sm text-gray-500 dark:text-gray-400 hidden">
+                            Ready to upload
+                        </span>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- View History -->
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900 rounded-md p-3">
+                        <i data-feather="bar-chart-2" class="h-6 w-6 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-lg font-medium text-gray-900 dark:text-white truncate">
+                            Emotion Stats
+                        </dt>
+                        <dd class="flex items-baseline">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                View detailed emotion analytics
+                            </span>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-4 sm:px-6">
+                <div class="text-sm">
+                    <a href="{% url 'emotion_recognition:profile' %}" class="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 flex items-center">
+                        View profile
+                        <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="mt-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+            Recent Emotion Analysis
+        </h3>
+        
+        <div class="mt-4 bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+            <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% if results %}
+                    {% for result in results %}
+                    <li>
+                        <a href="{% url 'emotion_recognition:result' result.id %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150">
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            {% if result.emotion == 'happy' %}
+                                                <span class="text-3xl" title="Happy" aria-label="Happy">😄</span>
+                                            {% elif result.emotion == 'sad' %}
+                                                <span class="text-3xl" title="Sad" aria-label="Sad">😢</span>
+                                            {% elif result.emotion == 'angry' %}
+                                                <span class="text-3xl" title="Angry" aria-label="Angry">😠</span>
+                                            {% elif result.emotion == 'fear' %}
+                                                <span class="text-3xl" title="Fear" aria-label="Fear">😱</span>
+                                            {% elif result.emotion == 'disgust' %}
+                                                <span class="text-3xl" title="Disgust" aria-label="Disgust">🤢</span>
+                                            {% elif result.emotion == 'surprised' %}
+                                                <span class="text-3xl" title="Surprised" aria-label="Surprised">😲</span>
+                                            {% else %}
+                                                <span class="text-3xl" title="Neutral" aria-label="Neutral">😐</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                Detected: <span class="font-semibold capitalize">{{ result.emotion }}</span>
+                                            </div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-300">
+                                                Confidence: {{ result.confidence|floatformat:2|mul:100 }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-2 flex-shrink-0 flex">
+                                        <div class="text-right">
+                                            <div class="text-sm text-gray-500 dark:text-gray-300">
+                                                {{ result.created_at|date:"M d, Y" }}
+                                            </div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-300">
+                                                {{ result.created_at|time:"g:i A" }}
+                                            </div>
+                                        </div>
+                                        <div class="ml-2 flex items-center text-gray-400">
+                                            <i data-feather="chevron-right" class="h-5 w-5"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                        <i data-feather="mic-off" class="h-12 w-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"></i>
+                        <p class="text-base">No emotion analyses recorded yet.</p>
+                        <p class="mt-1">Start by <a href="{% url 'emotion_recognition:record' %}" class="text-primary-600 dark:text-primary-400 hover:underline">recording your voice</a> or uploading an audio file.</p>
+                    </li>
+                {% endif %}
+            </ul>
+            {% if results %}
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 flex items-center justify-between sm:px-6">
+                <a href="{% url 'emotion_recognition:profile' %}" class="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500 flex items-center">
+                    View all results
+                    <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('audio_file');
+        const fileSelected = document.getElementById('file-selected');
+        const uploadForm = document.getElementById('upload-form');
+        
+        if (fileInput && fileSelected && uploadForm) {
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    fileSelected.classList.remove('hidden');
+                    fileSelected.textContent = fileInput.files[0].name;
+                    
+                    // Auto submit the form when file is selected
+                    const formData = new FormData(uploadForm);
+                    
+                    // Show loading state
+                    fileSelected.textContent = 'Uploading and analyzing...';
+                    
+                    fetch('{% url "emotion_recognition:process_audio" %}', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = data.result_url;
+                        } else {
+                            alert('Error: ' + data.error);
+                            fileSelected.textContent = 'Error: ' + data.error;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        fileSelected.textContent = 'Error: Please try again';
+                    });
+                } else {
+                    fileSelected.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
